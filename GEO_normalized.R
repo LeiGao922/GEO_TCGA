@@ -45,8 +45,8 @@ exprSet2 <- exprSet %>%
   mutate(rowMean = rowMeans(exprSet[,1:(ncol(exprSet)-2)])) %>% 
   arrange(desc(rowMean)) %>% #把表达量的平均值按从大到小排序
   distinct(symbol,.keep_all = T) %>% # symbol留下第一个
-  select(-rowMean) #反向选择去除rowMean
-
+  select(-rowMean)  %>% #反向选择去除rowMean
+  column_to_rownames(var = "symbol") #列名变行名
 save(exprSet2,file = "exprSet2_symbol.Rda")
 ## 06.差异分析
 library(limma)
