@@ -1,0 +1,54 @@
+#1.下载supplyment的cel文件并读取
+library(oligo)
+getGEOSuppFiles(gse)
+setwd("GSE85258/")
+dir()
+untar(paste0(gse, "_RAW.tar"))
+files <- dir(pattern="gz$")
+sapply(files, gunzip)
+filelist <- dir(pattern="cel$")
+affyRaw <- read.celfiles(filelist)
+eset <- rma(affyRaw)
+eset.e <- exprs(eset)
+library(tidyverse)
+str_sub(colnames(eset.e)[1],1,10)
+colnames(eset.e) <- str_sub(colnames(eset.e),1,10)
+boxplot(eset.e) #质控，查看是否需标准化
+
+#调整pd的行名顺序与eset.e列名完全一致
+p = identical(rownames(pd),colnames(eset.e));p
+if(!p) eset.e = eset.e[,match(rownames(pd),colnames(eset.e))]
+#2.设置分组，差异分析
+group_list <- ifelse(str_detect(pd$title,"primary"),"met", "primary")
+group_list <- factor(group_list,
+                     levels = c("primary","met"))
+
+design= model.matrix(~group_list)
+library(limma)
+fit=lmFit(hb2,design)
+fit=eBayes(fit)
+deg=topTable(fit,coef=2,number = Inf)
+
+#3.加change列,标记上下调基因
+logFC_t=1 
+P.Value_t = 0.05
+k1 = (deg$P.Value < P.Value_t)&(deg$logFC < -logFC_t)
+k2 = (deg$P.Value < P.Value_t)&(deg$logFC > logFC_t)
+change = ifelse(k1,"down",ifelse(k2,"up","stable"))
+deg$change <- change
+
+#4.火山图----
+library(dplyr)
+library(ggplot2)
+dat  = deg
+p <- ggplot(data = dat, 
+            aes(x = logFC, 
+                y = -log10(P.Value))) +
+  geom_point(alpha=0.4, size=3.5, 
+             aes(color=change)) +
+  ylab("-log10(Pvalue)")+
+  scale_color_manual(values=c("blue", "grey","red"))+
+  geom_vline(xintercept=c(-logFC_t,logFC_t),lty=4,col="black",lwd=0.8) +
+  geom_hline(yintercept = -log10(0.05),lty=4,col="black",lwd=0.8) +
+  theme_bw()
+p
