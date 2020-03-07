@@ -1,5 +1,8 @@
 #1.下载supplyment的cel文件并读取
 library(oligo)
+library(GEOquery)
+library(affy)
+gse="GSE36895"
 getGEOSuppFiles(gse)
 setwd("GSE85258/")
 dir()
