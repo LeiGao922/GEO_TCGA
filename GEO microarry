@@ -74,3 +74,47 @@ p <- ggplot(data = dat,
   geom_hline(yintercept = -log10(0.05),lty=4,col="black",lwd=0.8) +
   theme_bw()
 p
+
+##去除“///”:一个探针对应多个基因
+rm(list = ls())
+options(stringsAsFactors = F)
+library(GEOquery)
+library(tidyverse)
+##下载注释信息
+gpl <- getGEO("GPL96", destdir = ".") %>% 
+  Table( )
+save(gpl,file = "GPL96_annot.Rdata")
+load("GPL96_annot.Rdata")
+probe <- gpl %>% 
+  select("ID", "Gene Symbol", "ENTREZ_GENE_ID")
+
+##去除“///”:一个探针对应多个基因
+if(F){
+  library(tidyverse)
+  probe2 <- apply(probe, 1, function(x){
+    paste(x[1],
+          str_split(x[2], "///", simplify = T),
+          sep = "|")
+  }) %>% 
+    unlist()
+  ###
+  head(probe2)
+  length(probe2)
+  probe2 <- as_tibble(probe2)
+  ##这里用\\进行转义，匹配分割“|”，达到分割目的
+  probe2 <- probe2 %>% 
+    separate(value,c("ID", "GeneName"), sep = "\\|")
+  dim(probe2)
+  
+  ##找出重复ID，两个table的妙哟弄
+  table(table(probe2$ID))
+  ##筛出对应一个基因的探针
+  test2 <- probe2 %>% 
+    count(ID) %>% 
+    filter(n == 1) %>% 
+    inner_join(probe2,by = "ID") %>% 
+    select(-n)
+  dim(test2)
+  head(test2)
+  probe2 <- test2 ##将最终结果赋值给probe2
+}
