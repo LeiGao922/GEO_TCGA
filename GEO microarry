@@ -1,3 +1,4 @@
+#1.下载表达矩阵
 rm(list = ls())
 options(stringsAsFactors = F)
 library(GEOquery)
