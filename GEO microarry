@@ -2,7 +2,7 @@ rm(list = ls())
 options(stringsAsFactors = F)
 library(GEOquery)
 gse = "GSE42872"
-eSet <- getGEO("GSE42872", 
+eSet <- getGEO(gse, 
                destdir = '.', 
                getGPL = F)
 #(1)提取表达矩阵exp
